@@ -1,0 +1,638 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>PhotoBooth - Prendre & Éditer des Photos</title>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@600&display=swap" rel="stylesheet">
+    <style>
+        body {
+            margin: 0;
+            background: linear-gradient(120deg, #232526 0%, #414345 100%);
+            font-family: 'Montserrat', Arial, sans-serif;
+            color: #f4f4f4;
+        }
+        .main-layout {
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            gap: 40px;
+            max-width: 1100px;
+            margin: 50px auto;
+        }
+        .container, .editor-panel {
+            background: rgba(255,255,255,0.07);
+            border-radius: 18px;
+            box-shadow: 0 8px 32px 0 #23252655;
+            padding: 38px 32px;
+            text-align: center;
+            min-width: 370px;
+        }
+        .container {
+            min-width: 370px;
+            max-width: 400px;
+        }
+        .editor-panel {
+            min-width: 370px;
+            max-width: 400px;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 1000;
+            background: rgba(34,34,34,0.98);
+            box-shadow: 0 8px 32px 0 #232526bb;
+            display: none;
+        }
+        .editor-overlay {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.5);
+            z-index: 999;
+            display: none;
+        }
+        h1, h2 {
+            color: #00ffe7;
+            margin-bottom: 24px;
+            letter-spacing: 2px;
+            font-size: 2rem;
+        }
+        h2 {
+            font-size: 1.3rem;
+            margin-top: 0;
+        }
+        video, canvas {
+            width: 340px;
+            height: 255px;
+            border-radius: 14px;
+            margin-bottom: 18px;
+            background: #232526;
+            box-shadow: 0 2px 16px #00ffe733;
+        }
+        .main-btn {
+            background: linear-gradient(90deg, #00ffe7, #0072ff);
+            color: #232526;
+            border: none;
+            border-radius: 10px;
+            padding: 12px 30px;
+            font-size: 1.1rem;
+            font-weight: bold;
+            margin: 12px 0 24px 0;
+            cursor: pointer;
+            transition: background 0.3s, color 0.3s;
+            box-shadow: 0 2px 8px #00ffe755;
+        }
+        .main-btn:hover {
+            background: linear-gradient(90deg, #0072ff, #00ffe7);
+            color: #fff;
+        }
+        .photos {
+            display: flex;
+            flex-direction: column;
+            gap: 18px;
+            width: 100%;
+            align-items: center;
+        }
+        .photo-card {
+            background: #fff;
+            border-radius: 10px;
+            box-shadow: 0 2px 8px #00ffe733;
+            padding: 10px 8px 14px 8px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            width: 220px;
+        }
+        .photo-card img {
+            width: 180px;
+            height: 120px;
+            object-fit: cover;
+            border-radius: 8px;
+            border: 2px solid #00ffe7;
+            background: #eee;
+        }
+        .edit-btn, .download-btn {
+            margin-top: 8px;
+            background: linear-gradient(90deg, #0072ff, #00ffe7);
+            color: #232526;
+            border: none;
+            border-radius: 6px;
+            padding: 6px 16px;
+            cursor: pointer;
+            font-size: 0.95rem;
+            font-weight: bold;
+            transition: background 0.3s, color 0.3s;
+        }
+        .edit-btn:hover, .download-btn:hover {
+            background: linear-gradient(90deg, #00ffe7, #0072ff);
+            color: #fff;
+        }
+        .editor-panel .editor-img {
+            width: 220px;
+            height: 150px;
+            object-fit: cover;
+            border-radius: 10px;
+            border: 2px solid #00ffe7;
+            background: #eee;
+            margin-bottom: 18px;
+        }
+        .filters {
+            margin-top: 10px;
+            display: flex;
+            flex-direction: row;
+            gap: 18px;
+            width: 100%;
+            justify-content: center;
+            margin-left: auto;
+            margin-right: auto;
+            flex-wrap: wrap;
+        }
+        .filter-row {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 4px;
+            min-width: 80px;
+        }
+        .filters label {
+            color: #00ffe7;
+            font-size: 0.97rem;
+            font-weight: 600;
+            min-width: 70px;
+        }
+        .filters input[type="range"] {
+            width: 80px;
+        }
+        .filter-value {
+            min-width: 38px;
+            text-align: center;
+            color: #0072ff;
+            font-weight: bold;
+            font-size: 0.97rem;
+        }
+        .editor-btn, .cancel-btn {
+            margin-top: 18px;
+            background: linear-gradient(90deg, #0072ff, #00ffe7);
+            color: #232526;
+            border: none;
+            border-radius: 6px;
+            padding: 8px 20px;
+            cursor: pointer;
+            font-size: 1rem;
+            font-weight: bold;
+            transition: background 0.3s, color 0.3s;
+            margin-right: 8px;
+        }
+        .editor-btn:hover, .cancel-btn:hover {
+            background: linear-gradient(90deg, #00ffe7, #0072ff);
+            color: #fff;
+        }
+        .quick-actions {
+            display: flex;
+            justify-content: center;
+            gap: 16px;
+            margin-bottom: 12px;
+        }
+        .quick-btn {
+            background: #00ffe7;
+            color: #232526;
+            border: none;
+            border-radius: 8px;
+            padding: 6px 12px;
+            font-size: 1rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background 0.3s, color 0.3s;
+        }
+        .quick-btn:hover {
+            background: #0072ff;
+            color: #fff;
+        }
+        @media (max-width: 900px) {
+            .main-layout { flex-direction: column; align-items: center; }
+            .container, .editor-panel { width: 98vw; min-width: unset; max-width: unset; }
+            .photo-card { width: 98vw; }
+            .photo-card img { width: 90vw; }
+            .editor-panel .editor-img { width: 90vw; }
+            .filters { flex-wrap: wrap; }
+            .main-btn,
+            .edit-btn,
+            .download-btn,
+            .editor-btn,
+            .cancel-btn,
+            .quick-btn {
+                font-size: 1.3rem;
+                padding: 18px 0;
+                min-width: 90vw;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="main-layout">
+        <!-- Partie prise de photo -->
+        <div class="container">
+            <h1>PhotoBoothAXEL</h1>
+            <video id="video" autoplay playsinline></video>
+            <br>
+            <button class="main-btn" onclick="takePhoto()">Prendre une photo</button>
+            <button class="main-btn" id="retakeBtn" style="display:none; margin-left:10px;">Reprendre une photo</button>
+            <canvas id="canvas" style="display:none;"></canvas>
+            <h2>Vos photos</h2>
+            <div class="photos" id="photos"></div>
+        </div>
+        <!-- Overlay et fenêtre d'édition -->
+        <div class="editor-overlay" id="editorOverlay"></div>
+        <div class="editor-panel" id="editorPanel">
+            <h2>Modifier la photo</h2>
+            <div class="quick-actions">
+                <button class="quick-btn" id="mirrorBtn" title="Effet miroir">Miroir</button>
+                <button class="quick-btn" id="rotateLeftBtn" title="Rotation gauche">⟲</button>
+                <button class="quick-btn" id="rotateRightBtn" title="Rotation droite">⟳</button>
+                <button class="quick-btn" id="resetBtn" title="Réinitialiser">Réinitialiser</button>
+            </div>
+            <img id="editorImg" class="editor-img" src="" alt="Photo à éditer">
+            <div class="filters" id="filters"></div>
+            <button class="editor-btn" id="saveBtn">Enregistrer</button>
+            <button class="cancel-btn" id="cancelBtn">Annuler</button>
+        </div>
+    </div>
+    <script>
+        // Partie prise de photo
+        const video = document.getElementById('video');
+        const canvas = document.getElementById('canvas');
+        const photos = document.getElementById('photos');
+        const editorPanel = document.getElementById('editorPanel');
+        const editorOverlay = document.getElementById('editorOverlay');
+        const editorImg = document.getElementById('editorImg');
+        const filtersDiv = document.getElementById('filters');
+        const saveBtn = document.getElementById('saveBtn');
+        const cancelBtn = document.getElementById('cancelBtn');
+        const retakeBtn = document.getElementById('retakeBtn');
+        // Nouveaux boutons
+        const mirrorBtn = document.getElementById('mirrorBtn');
+        const rotateLeftBtn = document.getElementById('rotateLeftBtn');
+        const rotateRightBtn = document.getElementById('rotateRightBtn');
+        const resetBtn = document.getElementById('resetBtn');
+
+        let currentEditImg = null;
+        let currentPhotoCard = null;
+        let filterValues = {};
+        let isMirrored = false;
+
+        // Amélioration qualité : capture en 2x résolution puis resize pour affichage
+        function takePhoto() {
+            // On prend la résolution réelle de la vidéo (souvent plus grande que l'affichage)
+            const w = video.videoWidth;
+            const h = video.videoHeight;
+            // On double la résolution pour moins de pixels visibles
+            canvas.width = w * 2;
+            canvas.height = h * 2;
+            const ctx = canvas.getContext('2d');
+            ctx.imageSmoothingEnabled = true;
+            ctx.imageSmoothingQuality = "high";
+            ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+            // On réduit pour affichage (anti-aliasing)
+            const tempCanvas = document.createElement('canvas');
+            tempCanvas.width = w;
+            tempCanvas.height = h;
+            const tempCtx = tempCanvas.getContext('2d');
+            tempCtx.imageSmoothingEnabled = true;
+            tempCtx.imageSmoothingQuality = "high";
+            tempCtx.drawImage(canvas, 0, 0, canvas.width, canvas.height, 0, 0, w, h);
+            const imgUrl = tempCanvas.toDataURL('image/png');
+            openEditorFromPhoto(imgUrl);
+            retakeBtn.style.display = "inline-block";
+        }
+
+        function addPhoto(imgUrl) {
+            const div = document.createElement('div');
+            div.className = "photo-card";
+            const img = document.createElement('img');
+            img.src = imgUrl;
+            img.style.filter = "";
+            div.appendChild(img);
+
+            const editBtn = document.createElement('button');
+            editBtn.className = "edit-btn";
+            editBtn.textContent = "Éditer";
+            editBtn.onclick = function() {
+                openEditor(img, div);
+            };
+            div.appendChild(editBtn);
+
+            const downloadBtn = document.createElement('button');
+            downloadBtn.className = "download-btn";
+            downloadBtn.textContent = "Télécharger";
+            downloadBtn.onclick = function() {
+                downloadImage(img.src);
+            };
+            div.appendChild(downloadBtn);
+
+            photos.prepend(div);
+        }
+
+        function downloadImage(dataUrl) {
+            const a = document.createElement('a');
+            a.href = dataUrl;
+            a.download = "photo.png";
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+        }
+
+        // Ouvre l'éditeur après la prise de photo (pas depuis la galerie)
+        function openEditorFromPhoto(imgUrl) {
+            editorPanel.style.display = "block";
+            editorOverlay.style.display = "block";
+            document.querySelector('.container').style.filter = "blur(2px)";
+            editorImg.src = imgUrl;
+            currentEditImg = null;
+            currentPhotoCard = null;
+            isMirrored = false;
+            filterValues = {
+                brightness: 100, contrast: 100, saturate: 100, rotate: 0, blur: 0,
+                invert: 0, grayscale: 0, sepia: 0, hue: 0, opacity: 100
+            };
+            renderFilters();
+            applyFilters();
+        }
+
+        // Ouvre l'éditeur depuis la galerie
+        function openEditor(img, photoCard) {
+            editorPanel.style.display = "block";
+            editorOverlay.style.display = "block";
+            document.querySelector('.container').style.filter = "blur(2px)";
+            editorImg.src = img.src;
+            currentEditImg = img;
+            currentPhotoCard = photoCard;
+            isMirrored = false;
+            filterValues = {
+                brightness: 100, contrast: 100, saturate: 100, rotate: 0, blur: 0,
+                invert: 0, grayscale: 0, sepia: 0, hue: 0, opacity: 100
+            };
+            renderFilters();
+            applyFilters();
+        }
+
+        function renderFilters() {
+            filtersDiv.innerHTML = `
+                <div class="filter-row"><label>Lum.</label>
+                    <input type="range" min="50" max="200" value="100" id="bright">
+                    <span class="filter-value" id="val-bright">100%</span>
+                </div>
+                <div class="filter-row"><label>Contr.</label>
+                    <input type="range" min="50" max="200" value="100" id="cont">
+                    <span class="filter-value" id="val-cont">100%</span>
+                </div>
+                <div class="filter-row"><label>Satur.</label>
+                    <input type="range" min="0" max="300" value="100" id="sat">
+                    <span class="filter-value" id="val-sat">100%</span>
+                </div>
+                <div class="filter-row"><label>Rot.</label>
+                    <input type="range" min="0" max="360" value="0" id="rot">
+                    <span class="filter-value" id="val-rot">0°</span>
+                </div>
+                <div class="filter-row"><label>Flou</label>
+                    <input type="range" min="0" max="10" value="0" id="blur">
+                    <span class="filter-value" id="val-blur">0px</span>
+                </div>
+                <div class="filter-row"><label>Inv.</label>
+                    <input type="range" min="0" max="100" value="0" id="invert">
+                    <span class="filter-value" id="val-invert">0%</span>
+                </div>
+                <div class="filter-row"><label>Gris</label>
+                    <input type="range" min="0" max="100" value="0" id="gray">
+                    <span class="filter-value" id="val-gray">0%</span>
+                </div>
+                <div class="filter-row"><label>Sépia</label>
+                    <input type="range" min="0" max="100" value="0" id="sepia">
+                    <span class="filter-value" id="val-sepia">0%</span>
+                </div>
+                <div class="filter-row"><label>Teinte</label>
+                    <input type="range" min="0" max="360" value="0" id="hue">
+                    <span class="filter-value" id="val-hue">0°</span>
+                </div>
+                <div class="filter-row"><label>Opac.</label>
+                    <input type="range" min="10" max="100" value="100" id="opacity">
+                    <span class="filter-value" id="val-opacity">100%</span>
+                </div>
+                <div class="filter-row"><label>Net</label>
+                    <input type="range" min="0" max="5" value="0" id="sharp">
+                    <span class="filter-value" id="val-sharp">0</span>
+                </div>
+            `;
+            // Ajout des listeners
+            filtersDiv.querySelector("#bright").oninput = e => {
+                filterValues.brightness = e.target.value;
+                filtersDiv.querySelector("#val-bright").textContent = filterValues.brightness + "%";
+                applyFilters();
+            };
+            filtersDiv.querySelector("#cont").oninput = e => {
+                filterValues.contrast = e.target.value;
+                filtersDiv.querySelector("#val-cont").textContent = filterValues.contrast + "%";
+                applyFilters();
+            };
+            filtersDiv.querySelector("#sat").oninput = e => {
+                filterValues.saturate = e.target.value;
+                filtersDiv.querySelector("#val-sat").textContent = filterValues.saturate + "%";
+                applyFilters();
+            };
+            filtersDiv.querySelector("#rot").oninput = e => {
+                filterValues.rotate = e.target.value;
+                filtersDiv.querySelector("#val-rot").textContent = filterValues.rotate + "°";
+                applyFilters();
+            };
+            filtersDiv.querySelector("#blur").oninput = e => {
+                filterValues.blur = e.target.value;
+                filtersDiv.querySelector("#val-blur").textContent = filterValues.blur + "px";
+                applyFilters();
+            };
+            filtersDiv.querySelector("#invert").oninput = e => {
+                filterValues.invert = e.target.value;
+                filtersDiv.querySelector("#val-invert").textContent = filterValues.invert + "%";
+                applyFilters();
+            };
+            filtersDiv.querySelector("#gray").oninput = e => {
+                filterValues.grayscale = e.target.value;
+                filtersDiv.querySelector("#val-gray").textContent = filterValues.grayscale + "%";
+                applyFilters();
+            };
+            filtersDiv.querySelector("#sepia").oninput = e => {
+                filterValues.sepia = e.target.value;
+                filtersDiv.querySelector("#val-sepia").textContent = filterValues.sepia + "%";
+                applyFilters();
+            };
+            filtersDiv.querySelector("#hue").oninput = e => {
+                filterValues.hue = e.target.value;
+                filtersDiv.querySelector("#val-hue").textContent = filterValues.hue + "°";
+                applyFilters();
+            };
+            filtersDiv.querySelector("#opacity").oninput = e => {
+                filterValues.opacity = e.target.value;
+                filtersDiv.querySelector("#val-opacity").textContent = filterValues.opacity + "%";
+                applyFilters();
+            };
+            filtersDiv.querySelector("#sharp").oninput = e => {
+                filterValues.sharp = e.target.value;
+                filtersDiv.querySelector("#val-sharp").textContent = filterValues.sharp;
+                applyFilters();
+            };
+        }
+
+        function applyFilters() {
+            // Applique les filtres CSS pour l'aperçu
+            let filterStr = `
+                brightness(${filterValues.brightness}%)
+                contrast(${filterValues.contrast}%)
+                saturate(${filterValues.saturate}%)
+                blur(${filterValues.blur}px)
+                invert(${filterValues.invert}%)
+                grayscale(${filterValues.grayscale}%)
+                sepia(${filterValues.sepia}%)
+                hue-rotate(${filterValues.hue}deg)
+                opacity(${filterValues.opacity}%)
+            `;
+            editorImg.style.transform = `rotate(${filterValues.rotate}deg) scaleX(${isMirrored ? -1 : 1})`;
+            editorImg.style.filter = filterStr;
+        }
+
+        // Fonctionnalités rapides
+        mirrorBtn.onclick = function() {
+            isMirrored = !isMirrored;
+            applyFilters();
+        };
+        rotateLeftBtn.onclick = function() {
+            filterValues.rotate = (parseInt(filterValues.rotate) - 90 + 360) % 360;
+            filtersDiv.querySelector("#rot").value = filterValues.rotate;
+            filtersDiv.querySelector("#val-rot").textContent = filterValues.rotate + "°";
+            applyFilters();
+        };
+        rotateRightBtn.onclick = function() {
+            filterValues.rotate = (parseInt(filterValues.rotate) + 90) % 360;
+            filtersDiv.querySelector("#rot").value = filterValues.rotate;
+            filtersDiv.querySelector("#val-rot").textContent = filterValues.rotate + "°";
+            applyFilters();
+        };
+        resetBtn.onclick = function() {
+            filterValues = {
+                brightness: 100, contrast: 100, saturate: 100, rotate: 0, blur: 0,
+                invert: 0, grayscale: 0, sepia: 0, hue: 0, opacity: 100, sharp: 0
+            };
+            isMirrored = false;
+            renderFilters();
+            applyFilters();
+        };
+
+        saveBtn.onclick = function() {
+            // Applique les filtres sur un canvas pour sauvegarder l'image modifiée
+            const tempCanvas = document.createElement('canvas');
+            tempCanvas.width = editorImg.naturalWidth;
+            tempCanvas.height = editorImg.naturalHeight;
+            const ctx = tempCanvas.getContext('2d');
+            ctx.save();
+            ctx.globalAlpha = filterValues.opacity / 100;
+            // Miroir
+            if (isMirrored) {
+                ctx.translate(tempCanvas.width, 0);
+                ctx.scale(-1, 1);
+            }
+            ctx.translate(tempCanvas.width/2, tempCanvas.height/2);
+            ctx.rotate(filterValues.rotate * Math.PI / 180);
+            ctx.translate(-tempCanvas.width/2, -tempCanvas.height/2);
+            ctx.filter = `
+                brightness(${filterValues.brightness}%)
+                contrast(${filterValues.contrast}%)
+                saturate(${filterValues.saturate}%)
+                blur(${filterValues.blur}px)
+                invert(${filterValues.invert}%)
+                grayscale(${filterValues.grayscale}%)
+                sepia(${filterValues.sepia}%)
+                hue-rotate(${filterValues.hue}deg)
+            `;
+            ctx.drawImage(editorImg, 0, 0);
+            ctx.restore();
+
+            // Ajout d'un effet de netteté (sharpen) si demandé
+            if (parseInt(filterValues.sharp) > 0) {
+                sharpenCanvas(tempCanvas, parseInt(filterValues.sharp));
+            }
+
+            const newImgUrl = tempCanvas.toDataURL('image/png');
+            addPhoto(newImgUrl);
+            closeEditor();
+        };
+
+        cancelBtn.onclick = function() {
+            closeEditor();
+        };
+
+        editorOverlay.onclick = function() {
+            closeEditor();
+        };
+
+        function closeEditor() {
+            editorPanel.style.display = "none";
+            editorOverlay.style.display = "none";
+            document.querySelector('.container').style.filter = "none";
+        }
+
+        retakeBtn.onclick = function() {
+            // Efface la dernière photo prise (si besoin)
+            const lastPhoto = photos.firstElementChild;
+            if (lastPhoto) {
+                photos.removeChild(lastPhoto);
+            }
+            // Cache le bouton après avoir repris une photo
+            retakeBtn.style.display = "none";
+        };
+
+        // Fonction de netteté simple (sharpen) sur canvas
+        function sharpenCanvas(canvas, level) {
+            // Simple convolution kernel for sharpening
+            const ctx = canvas.getContext('2d');
+            const w = canvas.width, h = canvas.height;
+            let imgData = ctx.getImageData(0, 0, w, h);
+            let data = imgData.data;
+            let weights = [
+                0, -1, 0,
+                -1, 5 + level, -1,
+                0, -1, 0
+            ];
+            let side = 3;
+            let halfSide = Math.floor(side / 2);
+            let output = ctx.createImageData(w, h);
+            let dst = output.data;
+            for (let y = 0; y < h; y++) {
+                for (let x = 0; x < w; x++) {
+                    for (let c = 0; c < 4; c++) {
+                        let i = (y * w + x) * 4 + c;
+                        let sum = 0;
+                        for (let ky = 0; ky < side; ky++) {
+                            for (let kx = 0; kx < side; kx++) {
+                                let px = x + kx - halfSide;
+                                let py = y + ky - halfSide;
+                                if (px >= 0 && px < w && py >= 0 && py < h) {
+                                    let ki = (py * w + px) * 4 + c;
+                                    let wi = weights[ky * side + kx];
+                                    sum += data[ki] * wi;
+                                }
+                            }
+                        }
+                        dst[i] = Math.min(255, Math.max(0, sum));
+                    }
+                }
+            }
+            ctx.putImageData(output, 0, 0);
+        }
+
+        // Démarrage caméra
+        navigator.mediaDevices.getUserMedia({ video: true, audio: false })
+            .then(stream => {
+                video.srcObject = stream;
+            })
+            .catch(err => {
+                alert("Impossible d'accéder à la caméra : " + err);
+            });
+    </script>
+</body>
+</html>
